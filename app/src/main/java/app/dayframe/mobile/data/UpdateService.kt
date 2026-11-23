@@ -1,12 +1,11 @@
 package app.dayframe.mobile.data
 
+import android.text.Html
+import android.util.Xml
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.BufferedReader
+import org.xmlpull.v1.XmlPullParser
 import java.io.IOException
-import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Instant
@@ -38,144 +37,170 @@ data class UpdateSnapshot(
     val errorMessage: String? = null
 )
 
+private data class ReleaseEntry(
+    val tag: String,
+    val title: String,
+    val publishedAt: String?,
+    val releaseUrl: String,
+    val notes: List<String>
+)
+
 object UpdateService {
-    private const val API = "https://api.github.com/repos/CFSTUDIO-project/Open-source"
+    private const val OWNER = "CFSTUDIO-project"
+    private const val REPOSITORY = "Open-source"
+    private const val RELEASE_FEED =
+        "https://github.com/$OWNER/$REPOSITORY/releases.atom"
     private const val USER_AGENT = "DAYFRAME-Android"
 
+    /**
+     * Uses GitHub's public Atom release feed instead of the unauthenticated REST API.
+     * This avoids spending the small shared GitHub API rate-limit budget every time
+     * the About page refreshes. The APK URL is only exposed after its asset responds.
+     */
     suspend fun check(currentVersion: String): UpdateSnapshot = withContext(Dispatchers.IO) {
         try {
-            val releases = readArray("$API/releases?per_page=8")
-            val release = (0 until releases.length())
-                .mapNotNull { releases.optJSONObject(it) }
-                .firstOrNull { !it.optBoolean("draft", true) }
-
-            val run = runCatching { readObject("$API/actions/runs?per_page=1&branch=main")
-                .optJSONArray("workflow_runs")?.optJSONObject(0) }.getOrNull()
-            val workflowState = run?.optString("status")?.takeIf { it.isNotBlank() && it != "null" }
-            val workflowConclusion = run?.optString("conclusion")?.takeIf { it.isNotBlank() && it != "null" }
-            val workflowUrl = run?.optString("html_url")?.takeIf { it.startsWith("https://github.com/") }
-
-            if (workflowState == "queued" || workflowState == "in_progress") {
-                return@withContext UpdateSnapshot(
-                    status = UpdateStatus.BUILDING,
-                    currentVersion = currentVersion,
-                    latestVersion = release?.optString("tag_name"),
-                    releaseName = release?.optString("name"),
-                    publishedAt = release?.optString("published_at"),
-                    apkUrl = findApk(release?.optJSONArray("assets")),
-                    releaseUrl = release?.optString("html_url"),
-                    notes = releaseNotes(release?.optString("body").orEmpty()),
-                    workflowState = workflowState,
-                    workflowConclusion = workflowConclusion,
-                    workflowUrl = workflowUrl
-                )
-            }
-
+            val release = readLatestRelease()
             if (release == null) {
                 return@withContext UpdateSnapshot(
                     status = UpdateStatus.MISSING,
                     currentVersion = currentVersion,
-                    workflowState = workflowState,
-                    workflowConclusion = workflowConclusion,
-                    workflowUrl = workflowUrl
+                    errorMessage = "No public GitHub release has been published yet."
                 )
             }
 
-            val tag = release.optString("tag_name").ifBlank { "Unknown" }
-            val published = release.optString("published_at").takeIf { it.isNotBlank() && it != "null" }
-            val assetUrl = findApk(release.optJSONArray("assets"))
-            val isNewer = compareVersions(tag, currentVersion) > 0
-            val today = published?.let { value ->
+            val assetUrl = buildApkUrl(release.tag)
+            val apkAvailable = assetUrl != null && isDownloadAvailable(assetUrl)
+            val today = release.publishedAt?.let { value ->
                 runCatching {
                     Instant.parse(value).atZone(ZoneId.systemDefault()).toLocalDate() == LocalDate.now()
                 }.getOrDefault(false)
             } ?: false
 
             UpdateSnapshot(
-                status = if (assetUrl != null) UpdateStatus.READY else UpdateStatus.MISSING,
+                status = if (apkAvailable) UpdateStatus.READY else UpdateStatus.MISSING,
                 currentVersion = currentVersion,
-                latestVersion = tag,
-                releaseName = release.optString("name").takeIf { it.isNotBlank() && it != "null" } ?: tag,
-                publishedAt = published,
+                latestVersion = release.tag,
+                releaseName = release.title,
+                publishedAt = release.publishedAt,
                 isPublishedToday = today,
-                updateAvailable = isNewer,
-                apkUrl = assetUrl,
-                releaseUrl = release.optString("html_url").takeIf { it.startsWith("https://github.com/") },
-                notes = releaseNotes(release.optString("body")),
-                workflowState = workflowState,
-                workflowConclusion = workflowConclusion,
-                workflowUrl = workflowUrl
+                updateAvailable = compareVersions(release.tag, currentVersion) > 0,
+                apkUrl = if (apkAvailable) assetUrl else null,
+                releaseUrl = release.releaseUrl,
+                notes = release.notes
             )
         } catch (error: Exception) {
             UpdateSnapshot(
                 status = UpdateStatus.ERROR,
                 currentVersion = currentVersion,
-                errorMessage = error.message?.take(180) ?: "Could not reach GitHub."
+                errorMessage = when {
+                    error.message?.contains("timed out", ignoreCase = true) == true ->
+                        "GitHub took too long to respond. Check your connection and try again."
+                    else -> error.message?.take(180) ?: "Could not reach GitHub Releases."
+                }
             )
         }
     }
 
-    private fun readArray(address: String): JSONArray =
-        readResponse(address) as? JSONArray ?: throw IOException("Unexpected GitHub response.")
-
-    private fun readObject(address: String): JSONObject =
-        readResponse(address) as? JSONObject ?: throw IOException("Unexpected GitHub response.")
-
-    private fun readResponse(address: String): Any {
-        val connection = (URL(address).openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
-            connectTimeout = 8_000
-            readTimeout = 10_000
-            setRequestProperty("Accept", "application/vnd.github+json")
-            setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
-            setRequestProperty("User-Agent", USER_AGENT)
+    private fun readLatestRelease(): ReleaseEntry? {
+        val connection = openConnection(RELEASE_FEED).apply {
+            setRequestProperty("Accept", "application/atom+xml, application/xml, text/xml")
         }
-
         try {
             val code = connection.responseCode
-            val stream = if (code in 200..299) connection.inputStream else connection.errorStream
-            val body = stream?.use { input ->
-                BufferedReader(InputStreamReader(input)).use { reader -> reader.readText() }
-            }.orEmpty()
-            if (code !in 200..299) {
-                throw IOException(
-                    when (code) {
-                        403, 429 -> "GitHub API rate limit reached. Try again later."
-                        404 -> "The public repository endpoint was not found."
-                        else -> "GitHub returned HTTP $code."
+            if (code !in 200..299) throw IOException("GitHub Releases returned HTTP $code.")
+            val parser = Xml.newPullParser()
+            connection.inputStream.use { parser.setInput(it, "UTF-8") }
+
+            var inEntry = false
+            var tag: String? = null
+            var title: String? = null
+            var published: String? = null
+            var releaseUrl: String? = null
+            var rawNotes: String? = null
+
+            while (parser.eventType != XmlPullParser.END_DOCUMENT) {
+                when (parser.eventType) {
+                    XmlPullParser.START_TAG -> when (parser.name) {
+                        "entry" -> {
+                            inEntry = true
+                            tag = null
+                            title = null
+                            published = null
+                            releaseUrl = null
+                            rawNotes = null
+                        }
+                        "title" -> if (inEntry) title = parser.nextText()
+                        "published" -> if (inEntry) published = parser.nextText()
+                        "content" -> if (inEntry) rawNotes = parser.nextText()
+                        "link" -> if (inEntry) {
+                            val rel = parser.getAttributeValue(null, "rel")
+                            val href = parser.getAttributeValue(null, "href")
+                            if (rel == "alternate" && href?.startsWith("https://github.com/$OWNER/$REPOSITORY/releases/tag/") == true) {
+                                releaseUrl = href
+                                tag = href.substringAfterLast("/")
+                            }
+                        }
                     }
-                )
+                    XmlPullParser.END_TAG -> if (parser.name == "entry" && inEntry) {
+                        val safeTag = tag
+                        val safeUrl = releaseUrl
+                        if (!safeTag.isNullOrBlank() && !safeUrl.isNullOrBlank()) {
+                            return ReleaseEntry(
+                                tag = safeTag,
+                                title = title?.takeIf { it.isNotBlank() } ?: safeTag,
+                                publishedAt = published,
+                                releaseUrl = safeUrl,
+                                notes = releaseNotes(rawNotes.orEmpty())
+                            )
+                        }
+                        inEntry = false
+                    }
+                }
+                parser.next()
             }
-            return when (body.trimStart().firstOrNull()) {
-                '[' -> JSONArray(body)
-                '{' -> JSONObject(body)
-                else -> throw IOException("GitHub returned an empty response.")
-            }
+            return null
         } finally {
             connection.disconnect()
         }
     }
 
-    private fun findApk(assets: JSONArray?): String? {
-        if (assets == null) return null
-        for (index in 0 until assets.length()) {
-            val asset = assets.optJSONObject(index) ?: continue
-            val name = asset.optString("name")
-            val url = asset.optString("browser_download_url")
-            if (name.endsWith(".apk", ignoreCase = true) && url.startsWith("https://github.com/")) {
-                return url
-            }
-        }
-        return null
+    private fun buildApkUrl(tag: String): String? {
+        val version = tag.removePrefix("v").removePrefix("V")
+        if (!version.matches(Regex("[A-Za-z0-9._-]+"))) return null
+        return "https://github.com/$OWNER/$REPOSITORY/releases/download/$tag/DAYFRAME-$version.apk"
     }
 
-    private fun releaseNotes(raw: String): List<String> = raw
-        .lineSequence()
-        .map { it.trim().removePrefix("-").removePrefix("*").trim() }
-        .filter { it.isNotBlank() && it != "null" }
-        .take(7)
-        .toList()
-        .ifEmpty { listOf("No release notes have been added yet.") }
+    private fun isDownloadAvailable(address: String): Boolean {
+        val connection = openConnection(address).apply {
+            requestMethod = "HEAD"
+            instanceFollowRedirects = true
+        }
+        return try {
+            connection.responseCode in 200..299
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun openConnection(address: String): HttpURLConnection =
+        (URL(address).openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 10_000
+            readTimeout = 12_000
+            instanceFollowRedirects = true
+            setRequestProperty("User-Agent", USER_AGENT)
+            setRequestProperty("Cache-Control", "no-cache")
+        }
+
+    private fun releaseNotes(raw: String): List<String> {
+        val readable = Html.fromHtml(raw, Html.FROM_HTML_MODE_LEGACY).toString()
+        return readable.lineSequence()
+            .map { it.trim().removePrefix("-").removePrefix("*").trim() }
+            .filter { it.isNotBlank() && it != "null" }
+            .take(7)
+            .toList()
+            .ifEmpty { listOf("No release notes have been added yet.") }
+    }
 
     private fun compareVersions(remote: String, local: String): Int {
         fun parts(value: String): List<Int> =
