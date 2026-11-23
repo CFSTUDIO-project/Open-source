@@ -12,6 +12,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -140,6 +141,21 @@ fun DayframeApp(
 
     var updateSnapshot by remember { mutableStateOf<UpdateSnapshot?>(null) }
     var updateLoading by remember { mutableStateOf(false) }
+    val appearancePrefs = remember { context.getSharedPreferences("dayframe.appearance", android.content.Context.MODE_PRIVATE) }
+    var backgroundChoice by remember { mutableStateOf(appearancePrefs.getString("background", "midnight") ?: "midnight") }
+    var iconChoice by remember { mutableStateOf(appearancePrefs.getString("icons", "violet") ?: "violet") }
+    val targetBackground = backgroundPalette(backgroundChoice)
+    val animatedBackgroundA by animateColorAsState(targetBackground.first, tween(700, easing = FastOutSlowInEasing), label = "background-a")
+    val animatedBackgroundB by animateColorAsState(targetBackground.second, tween(850, easing = FastOutSlowInEasing), label = "background-b")
+    val iconAccent = iconPalette(iconChoice)
+    fun setBackground(choice: String) {
+        backgroundChoice = choice
+        appearancePrefs.edit().putString("background", choice).apply()
+    }
+    fun setIconColor(choice: String) {
+        iconChoice = choice
+        appearancePrefs.edit().putString("icons", choice).apply()
+    }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
@@ -234,7 +250,7 @@ fun DayframeApp(
             .fillMaxSize()
             .background(
                 Brush.linearGradient(
-                    colors = listOf(Color(0xFF0B1120), Ink, Color(0xFF111327))
+                    colors = listOf(animatedBackgroundA, Ink, animatedBackgroundB)
                 )
             )
             .statusBarsPadding()
@@ -246,7 +262,7 @@ fun DayframeApp(
             SplashScene()
         } else if (wide) {
             Row(Modifier.fillMaxSize()) {
-                SideNavigation(page = page, onSelect = { page = it })
+                SideNavigation(page = page, iconAccent = iconAccent, onSelect = { page = it })
                 Box(
                     modifier = Modifier
                         .weight(1f)
@@ -279,7 +295,11 @@ fun DayframeApp(
                         downloadState = downloadState,
                         onRefreshUpdates = ::refreshUpdates,
                         onDownloadApk = onDownloadApk,
-                        onInstallApk = onInstallApk
+                        onInstallApk = onInstallApk,
+                        backgroundChoice = backgroundChoice,
+                        iconChoice = iconChoice,
+                        onBackgroundChoice = ::setBackground,
+                        onIconChoice = ::setIconColor
                     )
                 }
             }
@@ -312,10 +332,14 @@ fun DayframeApp(
                         downloadState = downloadState,
                         onRefreshUpdates = ::refreshUpdates,
                         onDownloadApk = onDownloadApk,
-                        onInstallApk = onInstallApk
+                        onInstallApk = onInstallApk,
+                        backgroundChoice = backgroundChoice,
+                        iconChoice = iconChoice,
+                        onBackgroundChoice = ::setBackground,
+                        onIconChoice = ::setIconColor
                     )
                 }
-                BottomNavigation(page = page, onSelect = { page = it })
+                BottomNavigation(page = page, iconAccent = iconAccent, onSelect = { page = it })
             }
         }
 
@@ -373,7 +397,11 @@ private fun PageContent(
     downloadState: DownloadUiState,
     onRefreshUpdates: () -> Unit,
     onDownloadApk: (String, String) -> Unit,
-    onInstallApk: () -> Unit
+    onInstallApk: () -> Unit,
+    backgroundChoice: String,
+    iconChoice: String,
+    onBackgroundChoice: (String) -> Unit,
+    onIconChoice: (String) -> Unit
 ) {
     AnimatedContent(
         targetState = page,
@@ -396,7 +424,8 @@ private fun PageContent(
             DayframePage.INSIGHTS -> InsightsPage(wide, tasks, sessions)
             DayframePage.ABOUT -> AboutPage(
                 wide, updateSnapshot, updateLoading, downloadState,
-                onRefreshUpdates, onDownloadApk, onInstallApk
+                onRefreshUpdates, onDownloadApk, onInstallApk,
+                backgroundChoice, iconChoice, onBackgroundChoice, onIconChoice
             )
         }
     }
@@ -925,7 +954,11 @@ private fun AboutPage(
     downloadState: DownloadUiState,
     onRefresh: () -> Unit,
     onDownload: (String, String) -> Unit,
-    onInstall: () -> Unit
+    onInstall: () -> Unit,
+    backgroundChoice: String,
+    iconChoice: String,
+    onBackgroundChoice: (String) -> Unit,
+    onIconChoice: (String) -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
     Column(
@@ -936,7 +969,8 @@ private fun AboutPage(
         if (wide) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1.05f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    ProjectIdentityCard()
+                    ProjectIdentityCard(iconAccent)
+                    ThemeStudioCard(backgroundChoice, iconChoice, onBackgroundChoice, onIconChoice)
                     UpdatePanel(snapshot, loading, downloadState, onRefresh, onDownload, onInstall) { uri -> uriHandler.openUri(uri) }
                 }
                 Column(Modifier.weight(.95f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -945,7 +979,8 @@ private fun AboutPage(
                 }
             }
         } else {
-            ProjectIdentityCard()
+            ProjectIdentityCard(iconAccent)
+            ThemeStudioCard(backgroundChoice, iconChoice, onBackgroundChoice, onIconChoice)
             UpdatePanel(snapshot, loading, downloadState, onRefresh, onDownload, onInstall) { uri -> uriHandler.openUri(uri) }
             AboutDetailsCard()
             SourceHistoryCard()
@@ -954,10 +989,10 @@ private fun AboutPage(
 }
 
 @Composable
-private fun ProjectIdentityCard() {
+private fun ProjectIdentityCard(iconAccent: Color = Violet) {
     SurfaceCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            DayframeMark(62.dp)
+            DayframeMark(62.dp, iconAccent)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("DAYFRAME", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.3.sp)
                 Text("Make room for what matters.", color = TextMuted, fontSize = 12.sp)
@@ -1154,6 +1189,97 @@ private fun UpdatePanel(
 }
 
 @Composable
+private fun ThemeStudioCard(
+    backgroundChoice: String,
+    iconChoice: String,
+    onBackgroundChoice: (String) -> Unit,
+    onIconChoice: (String) -> Unit
+) {
+    SurfaceCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("THEME STUDIO", color = Violet, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                Text("Make it yours", color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text("Personalize the atmosphere and icon accent.", color = TextMuted, fontSize = 11.sp)
+            }
+            Box(Modifier.size(42.dp).clip(RoundedCornerShape(14.dp)).background(Brush.linearGradient(listOf(backgroundPalette(backgroundChoice).first, iconPalette(iconChoice)))), contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.Palette, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+            }
+        }
+        Text("BACKGROUND", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("midnight", "ocean", "plum", "forest").forEach { choice ->
+                ThemeSwatch(
+                    modifier = Modifier.weight(1f),
+                    label = when (choice) { "midnight" -> "Night"; "ocean" -> "Ocean"; "plum" -> "Plum"; else -> "Forest" },
+                    colors = backgroundPalette(choice),
+                    selected = backgroundChoice == choice,
+                    onClick = { onBackgroundChoice(choice) }
+                )
+            }
+        }
+        Text("ICON COLOR", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.CenterVertically) {
+            listOf("violet", "cyan", "mint", "rose", "amber").forEach { choice ->
+                val color = iconPalette(choice)
+                val selected = iconChoice == choice
+                val scale by animateFloatAsState(if (selected) 1.12f else 1f, spring(dampingRatio = .65f), label = "icon-swatch-$choice")
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).clickable { onIconChoice(choice) }.padding(vertical = 7.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(
+                        Modifier.size(29.dp).scale(scale).clip(CircleShape)
+                            .background(Brush.linearGradient(listOf(color, color.copy(alpha = .58f))))
+                            .then(if (selected) Modifier.border(2.dp, TextPrimary, CircleShape) else Modifier),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.AutoAwesome, contentDescription = null, tint = Color(0xFF101522), modifier = Modifier.size(15.dp))
+                    }
+                    Text(choice.replaceFirstChar { it.uppercase() }, color = if (selected) TextPrimary else TextMuted, fontSize = 9.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
+                }
+            }
+        }
+        Text("Your choices are saved on this device and stay applied after restarting DAYFRAME.", color = TextMuted, fontSize = 10.sp, lineHeight = 15.sp)
+    }
+}
+
+@Composable
+private fun ThemeSwatch(
+    modifier: Modifier,
+    label: String,
+    colors: Pair<Color, Color>,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val scale by animateFloatAsState(if (selected) 1.035f else 1f, spring(dampingRatio = .7f), label = "background-swatch")
+    Column(modifier.scale(scale).clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick).padding(3.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(
+            Modifier.fillMaxWidth().height(37.dp).clip(RoundedCornerShape(10.dp))
+                .background(Brush.linearGradient(listOf(colors.first, colors.second)))
+                .then(if (selected) Modifier.border(2.dp, TextPrimary, RoundedCornerShape(10.dp)) else Modifier)
+        )
+        Text(label, color = if (selected) TextPrimary else TextMuted, fontSize = 9.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium)
+    }
+}
+
+private fun backgroundPalette(key: String): Pair<Color, Color> = when (key) {
+    "ocean" -> Color(0xFF071A2A) to Color(0xFF123B50)
+    "plum" -> Color(0xFF1B1028) to Color(0xFF3A1F49)
+    "forest" -> Color(0xFF091E1B) to Color(0xFF174237)
+    else -> Color(0xFF0B1120) to Color(0xFF17172E)
+}
+
+private fun iconPalette(key: String): Color = when (key) {
+    "cyan" -> Color(0xFF65D9F2)
+    "mint" -> Color(0xFF78E0C2)
+    "rose" -> Color(0xFFFF8EAD)
+    "amber" -> Color(0xFFFFC56D)
+    else -> Color(0xFFAA9CFF)
+}
+
+@Composable
 private fun AboutDetailsCard() {
     SurfaceCard {
         Text("Built around your day", color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
@@ -1258,7 +1384,7 @@ private fun AddTaskDialog(onDismiss: () -> Unit, onAdd: (String, String) -> Unit
 }
 
 @Composable
-private fun SideNavigation(page: DayframePage, onSelect: (DayframePage) -> Unit) {
+private fun SideNavigation(page: DayframePage, iconAccent: Color, onSelect: (DayframePage) -> Unit) {
     Column(
         Modifier.width(86.dp).fillMaxHeight().padding(start = 12.dp, top = 18.dp, bottom = 18.dp)
             .clip(RoundedCornerShape(23.dp)).background(Color(0xFF10182A).copy(alpha = .95f))
@@ -1266,10 +1392,10 @@ private fun SideNavigation(page: DayframePage, onSelect: (DayframePage) -> Unit)
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        DayframeMark(42.dp)
+        DayframeMark(42.dp, iconAccent)
         Spacer(Modifier.height(13.dp))
         DayframePage.values().forEach { target ->
-            NavItem(target, selected = page == target, vertical = true, onClick = { onSelect(target) })
+            NavItem(target, selected = page == target, vertical = true, iconAccent = iconAccent, onClick = { onSelect(target) })
         }
         Spacer(Modifier.weight(1f))
         Text("CF", color = TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
@@ -1277,7 +1403,7 @@ private fun SideNavigation(page: DayframePage, onSelect: (DayframePage) -> Unit)
 }
 
 @Composable
-private fun BottomNavigation(page: DayframePage, onSelect: (DayframePage) -> Unit) {
+private fun BottomNavigation(page: DayframePage, iconAccent: Color, onSelect: (DayframePage) -> Unit) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(20.dp)).background(Color(0xFF111A2C).copy(alpha = .98f))
@@ -1286,7 +1412,7 @@ private fun BottomNavigation(page: DayframePage, onSelect: (DayframePage) -> Uni
         verticalAlignment = Alignment.CenterVertically
     ) {
         DayframePage.values().forEach { target ->
-            NavItem(target, selected = page == target, vertical = false, onClick = { onSelect(target) }, modifier = Modifier.weight(1f))
+            NavItem(target, selected = page == target, vertical = false, iconAccent = iconAccent, onClick = { onSelect(target) }, modifier = Modifier.weight(1f))
         }
     }
 }
@@ -1296,17 +1422,18 @@ private fun NavItem(
     page: DayframePage,
     selected: Boolean,
     vertical: Boolean,
+    iconAccent: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val tint by animateFloatAsState(if (selected) 1f else .65f, tween(220), label = "nav-tint")
-    val contentColor = if (selected) Violet else TextMuted
+    val contentColor = if (selected) iconAccent else TextMuted
     val shape = RoundedCornerShape(14.dp)
     Column(
         modifier.then(
             Modifier
                 .clip(shape)
-                .background(if (selected) Violet.copy(alpha = .12f) else Color.Transparent)
+                .background(if (selected) iconAccent.copy(alpha = .13f) else Color.Transparent)
                 .clickable(onClick = onClick)
                 .padding(horizontal = if (vertical) 8.dp else 7.dp, vertical = 10.dp)
         ),
@@ -1408,13 +1535,13 @@ private fun SplashScene() {
 }
 
 @Composable
-private fun DayframeMark(markSize: androidx.compose.ui.unit.Dp) {
+private fun DayframeMark(markSize: androidx.compose.ui.unit.Dp, iconAccent: Color = Violet) {
     Canvas(Modifier.size(markSize)) {
         val stroke = markSize.toPx() * .095f
-        drawArc(Violet, 115f, 250f, false, style = Stroke(stroke, cap = StrokeCap.Round))
-        drawArc(Mint, -65f, 240f, false, style = Stroke(stroke, cap = StrokeCap.Round))
+        drawArc(iconAccent, 115f, 250f, false, style = Stroke(stroke, cap = StrokeCap.Round))
+        drawArc(iconAccent.copy(alpha = .72f), -65f, 240f, false, style = Stroke(stroke, cap = StrokeCap.Round))
         drawArc(Color(0xFFE5E8FF), 10f, 105f, false, style = Stroke(stroke, cap = StrokeCap.Round))
-        drawCircle(Mint, radius = stroke * .68f, center = androidx.compose.ui.geometry.Offset(size.width * .76f, size.height * .76f))
+        drawCircle(iconAccent, radius = stroke * .68f, center = androidx.compose.ui.geometry.Offset(size.width * .76f, size.height * .76f))
     }
 }
 
