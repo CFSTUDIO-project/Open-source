@@ -46,6 +46,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -54,6 +55,7 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
@@ -1301,15 +1303,15 @@ private fun AboutDetailsCard() {
 @Composable
 private fun SourceHistoryCard() {
     SurfaceCard {
-        Text("What's new in 2.0.0", color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-        Text("MAJOR UPDATE  ·  NOVEMBER 2026", color = Mint, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-        Text("A clearer, more informative update experience.", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Text("What's new in 3.0.0", color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Text("MAJOR UPDATE  ·  VERSION 3.0.0", color = Mint, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        Text("A more personal, fluid and expressive daily workspace.", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         listOf(
-            "Live version comparison: installed version versus latest published release.",
-            "More transparent release status, including build activity and APK availability.",
-            "Release notes are displayed directly inside the app when GitHub publishes them.",
-            "Added a visible last-checked timestamp and manual refresh control.",
-            "Improved update messaging so an unpublished build is never presented as a downloadable APK."
+            "Theme Studio with four animated background atmospheres and five icon accent colors.",
+            "Personal appearance choices are saved locally and restored after restarting the app.",
+            "Smoother animated background transitions and spring-based color selection feedback.",
+            "Navigation icons and the DAYFRAME mark respond to the selected accent color.",
+            "Update Center keeps the rate-limit-resistant public release feed from 2.0.0."
         ).forEach { item ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
                 Box(Modifier.padding(top = 5.dp).size(5.dp).clip(CircleShape).background(Mint))
