@@ -5,8 +5,8 @@ DAYFRAME's in-app updater reads the public GitHub Releases feed and looks for an
 ## Maintainer release steps
 
 1. Let the Android CI workflow complete successfully on the default branch at least once. This initializes and stores the repository's distribution signing identity in the private GitHub Actions cache.
-2. Update the version in the project changelog and source as appropriate.
-3. Create and push a semantic version tag such as v1.0.1.
+2. Update the version in the project changelog and source as appropriate. DAYFRAME 2.0.0 uses version code 2.
+3. Create and push a semantic version tag such as v2.0.0.
 4. The Publish Android Release workflow restores the existing signing identity, builds the release APK, and attaches it to a GitHub Release.
 5. Open the release page and verify the APK asset before announcing it.
 
