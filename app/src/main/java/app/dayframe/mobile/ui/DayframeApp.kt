@@ -89,6 +89,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
@@ -1407,6 +1408,3 @@ private fun formatPublishedDate(raw: String): String = runCatching {
         .format(DateTimeFormatter.ofPattern("d MMM yyyy  ·  HH:mm", Locale.getDefault()))
 }.getOrDefault(raw)
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.rotate(degrees: Float, block: androidx.compose.ui.graphics.drawscope.DrawScope.() -> Unit) {
-    androidx.compose.ui.graphics.drawscope.rotate(degrees, pivot = center, block = block)
-}
