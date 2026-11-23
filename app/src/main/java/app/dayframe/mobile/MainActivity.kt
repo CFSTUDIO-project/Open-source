@@ -77,8 +77,8 @@ class MainActivity : ComponentActivity() {
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                 .setAllowedOverMetered(true)
                 .setAllowedOverRoaming(false)
-                .setDestinationInExternalPublicDir(
-                    Environment.DIRECTORY_DOWNLOADS,
+                .setDestinationInExternalFilesDir(
+                    this@MainActivity, Environment.DIRECTORY_DOWNLOADS,
                     "DAYFRAME-$safeVersion.apk"
                 )
 
