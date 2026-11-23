@@ -37,7 +37,7 @@ It is **local-first by design**. Your tasks and focus sessions live on your devi
 | **Adaptive UI** | Compact portrait layout and a two-panel wide / landscape layout |
 | **Motion** | Animated launch mark, page transitions, progress rings, task feedback, animated theme transitions and spring-based swatch feedback |
 | **Theme Studio** | Four animated background palettes and five icon accent colors, saved locally across restarts |
-| **Update center** | Reads real GitHub Releases and Actions status; shows release notes and a published APK link when one exists |
+| **Update center** | Reads the public GitHub Releases feed; shows release notes and a published APK link when one exists |
 | **About** | Project purpose, creator attribution, app version and update history |
 
 ### Product preview
@@ -114,20 +114,16 @@ gradle --no-daemon installDebug
 
 ## In-app update center
 
-The update panel checks these public endpoints in this repository:
-
-- GET /repos/CFSTUDIO-project/Open-source/releases?per_page=8
-- GET /repos/CFSTUDIO-project/Open-source/actions/runs?per_page=1&branch=main
+The update panel reads the repository's public GitHub Releases Atom feed and checks the versioned APK download URL. It does not call the GitHub REST API for routine release checks.
 
 The status meanings are deliberately literal:
 
 - **Green — available:** a published release includes an APK asset. The app distinguishes an update from the version already installed.
-- **Yellow — building:** the latest GitHub Actions run is queued or in progress.
 - **Red — unavailable:** no published APK release is available yet.
 
 The panel shows the real release tag, publication date, release notes, and asset download URL. It refreshes when the About page opens and periodically while that page remains visible. Downloading uses Android's system Download Manager. Installing an APK still requires the device owner's confirmation and Android's package-install permission.
 
-A public repository has GitHub API rate limits. If a request fails, the app reports that it could not refresh instead of displaying stale data as live.
+The public Releases feed avoids the REST API rate-limit issue encountered by the earlier update checker. GitHub's Atom feed is an undocumented convenience and may change; if a request fails, the app reports that it could not refresh instead of displaying stale data as live.
 
 ## Privacy
 
