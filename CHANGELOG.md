@@ -2,6 +2,15 @@
 
 All notable changes to DAYFRAME are documented here.
 
+## 3.0.0 — Theme Studio
+
+- Added four animated background palettes: Midnight, Ocean, Plum and Forest.
+- Added five icon accent colors: Violet, Cyan, Mint, Rose and Amber.
+- Saved appearance preferences locally so they persist after app restarts.
+- Added smooth color transitions and spring feedback when selecting theme swatches.
+- Applied the selected icon accent to navigation icons and the DAYFRAME mark.
+- Kept the local-first planner, focus timer, insights and GitHub release checker.
+
 ## 2.0.0 — Update Center refresh
 
 - Set the application version to 2.0.0 (version code 2).
