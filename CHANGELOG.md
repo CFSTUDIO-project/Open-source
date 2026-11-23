@@ -32,4 +32,4 @@ All notable changes to DAYFRAME are documented here.
 - Added system Download Manager integration for published APK assets.
 - Added project identity, launcher icon, documentation and Android CI.
 
-> The source version is 1.0.0. An installable APK is published separately through GitHub Releases after a maintainer creates a signed release.
+ > Current source version: 3.0.0. An installable APK is published separately through GitHub Releases after the release workflow succeeds.
