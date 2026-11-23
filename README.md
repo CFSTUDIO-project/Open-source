@@ -60,7 +60,7 @@ There is no APK attached to this first source commit. The Android CI workflow bu
 - [Open the latest successful CI run](https://github.com/CFSTUDIO-project/Open-source/actions/workflows/android-ci.yml)
 - [Open published releases](https://github.com/CFSTUDIO-project/Open-source/releases)
 
-The in-app update center reads the repository's public release metadata. It only displays a download action when a published release actually contains an .apk asset. It does not invent a version or pretend an update is available.
+The in-app update center reads the repository's public release metadata, compares the installed version with the latest published release, shows release notes and displays when GitHub was last checked. It only displays a download action when a published release actually contains an .apk asset. It does not invent a version or pretend an update is available.
 
 ## Build
 
@@ -152,7 +152,7 @@ The goal is simple: build a useful daily workspace that feels considered, stays 
 - **Android package:** app.dayframe.mobile
 - **CI artifact:** `app-debug.apk` (available after a successful Android CI run)
 - **Published release APK:** `DAYFRAME-{version}.apk` (attached by the tag-based release workflow)
-- **Current source version:** 1.0.0
+- **Current source version:** 2.0.0
 - **Creator:** CF Studio
 - **Repository:** [CFSTUDIO-project/Open-source](https://github.com/CFSTUDIO-project/Open-source)
 - **License:** MIT
