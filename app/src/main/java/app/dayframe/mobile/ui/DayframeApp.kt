@@ -946,7 +946,7 @@ private fun AboutPage(
             }
         } else {
             ProjectIdentityCard()
-            UpdatePanel(snapshot, loading, downloadState, onRefresh, onDownload, onInstall, uriHandler.openUri)
+            UpdatePanel(snapshot, loading, downloadState, onRefresh, onDownload, onInstall) { uri -> uriHandler.openUri(uri) }
             AboutDetailsCard()
             SourceHistoryCard()
         }
@@ -1387,7 +1387,7 @@ private fun SplashScene() {
 @Composable
 private fun DayframeMark(markSize: androidx.compose.ui.unit.Dp) {
     Canvas(Modifier.size(markSize)) {
-        val stroke = size.toPx() * .095f
+        val stroke = markSize.toPx() * .095f
         drawArc(Violet, 115f, 250f, false, style = Stroke(stroke, cap = StrokeCap.Round))
         drawArc(Mint, -65f, 240f, false, style = Stroke(stroke, cap = StrokeCap.Round))
         drawArc(Color(0xFFE5E8FF), 10f, 105f, false, style = Stroke(stroke, cap = StrokeCap.Round))
