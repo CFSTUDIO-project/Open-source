@@ -55,7 +55,7 @@ The layout responds to **available window width**, not a hard-coded device model
 
 ## Download
 
-There is no APK attached to this first source commit. The Android CI workflow builds a debug APK for each successful run and uploads it as a GitHub Actions artifact.
+There is no APK attached to this first source commit. The Android CI workflow builds a debug APK for each successful run and uploads it as a GitHub Actions artifact. A separate tag-based workflow publishes a versioned APK to GitHub Releases after the repository signing identity has been initialized by a successful CI build. See [the release guide](docs/RELEASES.md) before publishing a version.
 
 - [Open the latest successful CI run](https://github.com/CFSTUDIO-project/Open-source/actions/workflows/android-ci.yml)
 - [Open published releases](https://github.com/CFSTUDIO-project/Open-source/releases)
@@ -150,7 +150,8 @@ The goal is simple: build a useful daily workspace that feels considered, stays 
 
 - **Application:** DAYFRAME
 - **Android package:** app.dayframe.mobile
-- **APK filename (CI artifact):** app-debug.apk
+- **CI artifact:** `app-debug.apk` (available after a successful Android CI run)
+- **Published release APK:** `DAYFRAME-{version}.apk` (attached by the tag-based release workflow)
 - **Current source version:** 1.0.0
 - **Creator:** CF Studio
 - **Repository:** [CFSTUDIO-project/Open-source](https://github.com/CFSTUDIO-project/Open-source)
