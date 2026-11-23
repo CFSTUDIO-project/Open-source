@@ -35,7 +35,8 @@ It is **local-first by design**. Your tasks and focus sessions live on your devi
 | **Insights** | Completed-task totals, focus minutes and a seven-day activity view |
 | **Persistence** | Tasks and completed focus sessions are stored locally and restored on launch |
 | **Adaptive UI** | Compact portrait layout and a two-panel wide / landscape layout |
-| **Motion** | Animated launch mark, page transitions, progress rings, task feedback and content resizing |
+| **Motion** | Animated launch mark, page transitions, progress rings, task feedback, animated theme transitions and spring-based swatch feedback |
+| **Theme Studio** | Four animated background palettes and five icon accent colors, saved locally across restarts |
 | **Update center** | Reads real GitHub Releases and Actions status; shows release notes and a published APK link when one exists |
 | **About** | Project purpose, creator attribution, app version and update history |
 
@@ -152,7 +153,7 @@ The goal is simple: build a useful daily workspace that feels considered, stays 
 - **Android package:** app.dayframe.mobile
 - **CI artifact:** `app-debug.apk` (available after a successful Android CI run)
 - **Published release APK:** `DAYFRAME-{version}.apk` (attached by the tag-based release workflow)
-- **Current source version:** 2.0.0
+- **Current source version:** 3.0.0
 - **Creator:** CF Studio
 - **Repository:** [CFSTUDIO-project/Open-source](https://github.com/CFSTUDIO-project/Open-source)
 - **License:** MIT
