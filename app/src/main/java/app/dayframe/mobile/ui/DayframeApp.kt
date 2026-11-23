@@ -34,6 +34,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -236,6 +238,8 @@ fun DayframeApp(
                     colors = listOf(Color(0xFF0B1120), Ink, Color(0xFF111327))
                 )
             )
+            .statusBarsPadding()
+            .navigationBarsPadding()
     ) {
         val wide = maxWidth >= 680.dp || (maxHeight < 480.dp && maxWidth >= 500.dp)
 
@@ -259,8 +263,8 @@ fun DayframeApp(
                         timerMinutes = timerMinutes,
                         timerRunning = timerRunning,
                         onAddTask = { showAddTask = true },
-                        onToggleTask = ::toggleTask,
-                        onDeleteTask = ::deleteTask,
+                        onToggleTask = { task -> toggleTask(task) },
+                        onDeleteTask = { task -> deleteTask(task) },
                         onOpenFocus = { page = DayframePage.FOCUS },
                         onPreset = { minutes ->
                             if (!timerRunning) {
@@ -268,9 +272,9 @@ fun DayframeApp(
                                 remainingSeconds = minutes * 60
                             }
                         },
-                        onStartTimer = ::startTimer,
-                        onPauseTimer = ::pauseTimer,
-                        onResetTimer = ::resetTimer,
+                        onStartTimer = { startTimer() },
+                        onPauseTimer = { pauseTimer() },
+                        onResetTimer = { resetTimer() },
                         updateSnapshot = updateSnapshot,
                         updateLoading = updateLoading,
                         downloadState = downloadState,
@@ -319,7 +323,7 @@ fun DayframeApp(
         if (showAddTask) {
             AddTaskDialog(
                 onDismiss = { showAddTask = false },
-                onAdd = ::addTask
+                onAdd = { title, priority -> addTask(title, priority) }
             )
         }
 
