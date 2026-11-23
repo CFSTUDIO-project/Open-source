@@ -963,6 +963,7 @@ private fun AboutPage(
     onIconChoice: (String) -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
+    val iconAccent = iconPalette(iconChoice)
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(17.dp)
@@ -1429,7 +1430,8 @@ private fun NavItem(
     modifier: Modifier = Modifier
 ) {
     val tint by animateFloatAsState(if (selected) 1f else .65f, tween(220), label = "nav-tint")
-    val contentColor = if (selected) iconAccent else TextMuted
+    val animatedAccent by animateColorAsState(iconAccent, tween(480, easing = FastOutSlowInEasing), label = "nav-accent")
+    val contentColor = if (selected) animatedAccent else TextMuted
     val shape = RoundedCornerShape(14.dp)
     Column(
         modifier.then(
@@ -1538,12 +1540,13 @@ private fun SplashScene() {
 
 @Composable
 private fun DayframeMark(markSize: androidx.compose.ui.unit.Dp, iconAccent: Color = Violet) {
+    val animatedAccent by animateColorAsState(iconAccent, tween(520, easing = FastOutSlowInEasing), label = "mark-accent")
     Canvas(Modifier.size(markSize)) {
         val stroke = markSize.toPx() * .095f
-        drawArc(iconAccent, 115f, 250f, false, style = Stroke(stroke, cap = StrokeCap.Round))
-        drawArc(iconAccent.copy(alpha = .72f), -65f, 240f, false, style = Stroke(stroke, cap = StrokeCap.Round))
+        drawArc(animatedAccent, 115f, 250f, false, style = Stroke(stroke, cap = StrokeCap.Round))
+        drawArc(animatedAccent.copy(alpha = .72f), -65f, 240f, false, style = Stroke(stroke, cap = StrokeCap.Round))
         drawArc(Color(0xFFE5E8FF), 10f, 105f, false, style = Stroke(stroke, cap = StrokeCap.Round))
-        drawCircle(iconAccent, radius = stroke * .68f, center = androidx.compose.ui.geometry.Offset(size.width * .76f, size.height * .76f))
+        drawCircle(animatedAccent, radius = stroke * .68f, center = androidx.compose.ui.geometry.Offset(size.width * .76f, size.height * .76f))
     }
 }
 
