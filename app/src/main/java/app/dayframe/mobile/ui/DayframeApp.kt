@@ -1129,10 +1129,26 @@ private fun UpdatePanel(
         downloadState.error?.let {
             Text(it, color = Coral, fontSize = 11.sp, lineHeight = 16.sp)
         }
+        if (snapshot != null) {
+            val checkedLabel = DateTimeFormatter.ofPattern("d MMM · HH:mm", Locale.getDefault())
+                .withZone(ZoneId.systemDefault())
+                .format(Instant.ofEpochMilli(snapshot.checkedAt))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("LAST CHECK", color = TextMuted.copy(alpha = .75f), fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = .9.sp)
+                Spacer(Modifier.weight(1f))
+                Text(checkedLabel, color = TextMuted, fontSize = 10.sp)
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Installed  " + snapshot.currentVersion, color = TextMuted, fontSize = 10.sp)
+                Spacer(Modifier.weight(1f))
+                Text("Latest  " + (snapshot.latestVersion ?: "Not published"), color = TextPrimary, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+            }
+        }
         Text(
-            "Checks GitHub when this page opens and every 5 minutes while it stays open.",
+            "Live GitHub check · refreshes on entry and every 5 minutes while this page is open.",
             color = TextMuted.copy(alpha = .8f),
-            fontSize = 10.sp
+            fontSize = 10.sp,
+            lineHeight = 14.sp
         )
     }
 }
@@ -1159,15 +1175,22 @@ private fun AboutDetailsCard() {
 @Composable
 private fun SourceHistoryCard() {
     SurfaceCard {
-        Text("Update history", color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-        Text("1.0.0  ·  First source release", color = Mint, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-        Text(
-            "Daily task creation and completion, priority labels, local persistence, focus timer presets, pause and resume, weekly insights, adaptive landscape layout, animated transitions, GitHub update centre and Android CI.",
-            color = TextMuted,
-            fontSize = 11.sp,
-            lineHeight = 17.sp
-        )
-        Text("Future APK release notes and publication dates are loaded from the repository's actual GitHub Releases.", color = TextMuted, fontSize = 10.sp, lineHeight = 15.sp)
+        Text("What's new in 2.0.0", color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        Text("MAJOR UPDATE  ·  NOVEMBER 2026", color = Mint, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        Text("A clearer, more informative update experience.", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        listOf(
+            "Live version comparison: installed version versus latest published release.",
+            "More transparent release status, including build activity and APK availability.",
+            "Release notes are displayed directly inside the app when GitHub publishes them.",
+            "Added a visible last-checked timestamp and manual refresh control.",
+            "Improved update messaging so an unpublished build is never presented as a downloadable APK."
+        ).forEach { item ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                Box(Modifier.padding(top = 5.dp).size(5.dp).clip(CircleShape).background(Mint))
+                Text(item, color = TextMuted, fontSize = 11.sp, lineHeight = 16.sp)
+            }
+        }
+        Text("The original planner, focus timer, local storage and weekly insights remain part of DAYFRAME.", color = TextMuted, fontSize = 10.sp, lineHeight = 15.sp)
     }
 }
 
