@@ -39,7 +39,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -938,7 +937,7 @@ private fun AboutPage(
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1.05f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     ProjectIdentityCard()
-                    UpdatePanel(snapshot, loading, downloadState, onRefresh, onDownload, onInstall, uriHandler.openUri)
+                    UpdatePanel(snapshot, loading, downloadState, onRefresh, onDownload, onInstall) { uri -> uriHandler.openUri(uri) }
                 }
                 Column(Modifier.weight(.95f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     AboutDetailsCard()
@@ -1386,8 +1385,8 @@ private fun SplashScene() {
 }
 
 @Composable
-private fun DayframeMark(size: androidx.compose.ui.unit.Dp) {
-    Canvas(Modifier.size(size)) {
+private fun DayframeMark(markSize: androidx.compose.ui.unit.Dp) {
+    Canvas(Modifier.size(markSize)) {
         val stroke = size.toPx() * .095f
         drawArc(Violet, 115f, 250f, false, style = Stroke(stroke, cap = StrokeCap.Round))
         drawArc(Mint, -65f, 240f, false, style = Stroke(stroke, cap = StrokeCap.Round))
