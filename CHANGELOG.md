@@ -2,6 +2,15 @@
 
 All notable changes to DAYFRAME are documented here.
 
+## 2.0.0 — Update Center refresh
+
+- Set the application version to 2.0.0 (version code 2).
+- Added a visible last-checked timestamp to the in-app Update Center.
+- Added a compact installed-versus-latest version comparison.
+- Reworked the in-app update history to explain the 2.0.0 changes.
+- Clarified that a source build is not a downloadable release until GitHub Releases contains an APK asset.
+- Kept the live GitHub release feed, workflow status, release notes and system APK download flow.
+
 ## 1.0.0 — First source release
 
 - Introduced the local-first daily task planner.
