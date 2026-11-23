@@ -4,8 +4,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-val configuredVersionName = providers.gradleProperty("appVersionName").orElse("1.0.0").get()
-val configuredVersionCode = providers.gradleProperty("appVersionCode").orElse("1").get().toInt()
+val configuredVersionName = providers.gradleProperty("appVersionName").orElse("2.0.0").get()
+val configuredVersionCode = providers.gradleProperty("appVersionCode").orElse("2").get().toInt()
 
 android {
     namespace = "app.dayframe.mobile"
